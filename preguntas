@@ -1,5 +1,5 @@
 - Para hacer una multiplicación pareja una solución es hacer que el vector tenga el tamaño de la cantidad 
-  de palabras en el corpus. 
+  de palabras en el corpus.
 - Para términos como tráfico pesado debería asociarsele un términos como tráfico fuerte. Así aunque dos tweets 
   no tengan el mismo vocabulario, siguen siendo parecidos porque su semántica es la misma. Ejemplo:
   Tráfico pesado en la Prados del Este. 
