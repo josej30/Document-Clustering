@@ -82,21 +82,29 @@ public class Documentclustering {
                 boolean present = false;
                 for(int i = 0; i < col.length; i++) {
                     String tweetText = col[i].tweet.getText();
-                    int k = -1;
-                    while(k + term.length() < tweetText.length() &&
-                            (k = tweetText.indexOf(term, k+term.length())) != -1) {
+                    int k = 0;
+                    while(k < tweetText.length() &&
+                            (k = tweetText.indexOf(term, k)) != -1) {
                         col[i].vsm[setIndex]++;
                         present = true;
+                        k += term.length();
                     }
                     if (present) {docFreq[setIndex]++;}
                 }
                 setIndex++;
             }
+
             // Computar vector de pesos
             for(int i = 0; i < col.length; i++) {
                 col[i].computeTermWeight(docFreq,tweetsPrimarias.size()
                         + tweetsCELAC.size());
             }
+            // Verificar un tweet en particular
+            for(int i = 0; i < col[6].vsm.length; i++) {
+                System.out.print(col[6].vsm[i]+" ");
+            }
+            System.out.println("");
+            
             // Crear instancias
             Instance[] instances = new Instance[tweetsCELAC.size() +
                     tweetsPrimarias.size()];
