@@ -14,13 +14,11 @@ public class Token {
     Tweet tweet;
     double[] vsm;
     String fromUser;
-    double tf;
     
     public Token(Tweet t, double[] v) {
         tweet = t;
         vsm = v;
         fromUser = t.getFromUser();
-        tf = 0.0;
     }
     
     public Tweet getTweet() {
