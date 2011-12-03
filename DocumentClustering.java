@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package document.clustering;
+package documentclustering;
 
 import java.util.List;
 import twitter4j.Query;
@@ -23,13 +23,9 @@ public class DocumentClustering {
      */
     public static void main(String[] args) {
         // TODO code application logic here
-        if (args.length < 1) {
-            System.out.println("java twitter4j.examples.search.SearchTweets [query]");
-            System.exit(-1);
-        }
         Twitter twitter = new TwitterFactory().getInstance();
         try {
-            QueryResult result = twitter.search(new Query(args[0]));
+            QueryResult result = twitter.search(new Query("lluvia"));
             List<Tweet> tweets = result.getTweets();
             for (Tweet tweet : tweets) {
                 System.out.println("@" + tweet.getFromUser() + " - " + tweet.getText());
