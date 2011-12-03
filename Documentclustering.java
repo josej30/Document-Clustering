@@ -30,6 +30,9 @@ import twitter4j.TwitterFactory;
 public class Documentclustering {
 
     public static String[] stopwords = {    "a",
+                                            "y",
+                                            "o",
+                                            "e",
                                             "el",
                                             "la",
                                             "lo",
@@ -76,9 +79,34 @@ public class Documentclustering {
             String[] tokens;
             TreeSet<String> s = new TreeSet<String>();
 
-            QueryResult resultPrimarias = twitter.search(new Query(args[0]));
-            List<Tweet> tweetsPrimarias = resultPrimarias.getTweets();
-            for ( Tweet tweet : resultPrimarias.getTweets()) {
+//            QueryResult resultPrimarias = twitter.search(new Query(args[0]));
+//            List<Tweet> tweetsPrimarias = resultPrimarias.getTweets();
+//            for ( Tweet tweet : resultPrimarias.getTweets()) {
+//                tokens = tweet.getText().toLowerCase().split("\\s");
+//
+//                // Cleaning the words and looking for stopwords
+//                for (int i = 0; i<tokens.length; i++){
+//                    if ( !isStopword(tokens[i],stopwords) && tokens[i].length()!=0)
+//                        s.add(clean(tokens[i]));
+//                }
+//            }
+//
+//            QueryResult resultCelac = twitter.search(new Query(args[1]));
+//            List<Tweet>  tweetsCELAC = resultCelac.getTweets();
+//            for ( Tweet tweet : resultCelac.getTweets() ) {
+//                tokens = tweet.getText().toLowerCase().split("\\s");
+//
+//                // Cleaning the words and looking for stopwords
+//                for (int i = 0; i<tokens.length; i++){
+//                    if ( !isStopword(tokens[i],stopwords) && tokens[i].length()!=0)
+//                        s.add(clean(tokens[i]));
+//                }
+//
+//            }
+
+            QueryResult resultHDLP = twitter.search(new Query("hoyo de la puerta").rpp(100));
+            List<Tweet>  tweetsHDLP = resultHDLP.getTweets();
+            for ( Tweet tweet : resultHDLP.getTweets() ) {
                 tokens = tweet.getText().toLowerCase().split("\\s");
 
                 // Cleaning the words and looking for stopwords
@@ -87,45 +115,41 @@ public class Documentclustering {
                         s.add(clean(tokens[i]));
                 }
 
-
-            }
-            //                System.out.println(tweet.getText());
-
-            QueryResult resultCelac = twitter.search(new Query(args[1]));
-            List<Tweet>  tweetsCELAC = resultCelac.getTweets();
-            for ( Tweet tweet : resultCelac.getTweets() ) {
-                tokens = tweet.getText().toLowerCase().split("\\s");
-
-                // Cleaning the words and looking for stopwords
-                for (int i = 0; i<tokens.length; i++){
-                    if ( !isStopword(tokens[i],stopwords) && tokens[i].length()!=0)
-                        s.add(clean(tokens[i]));
-                }
-                
             }
 
             System.out.println(s.size());
 
             //            System.out.println(s);
+
             // Preparar colección
-            Token[] col = new Token[tweetsPrimarias.size()
-                    + tweetsCELAC.size()];
-            int tweetIndex;
-            for(tweetIndex = 0; tweetIndex < tweetsPrimarias.size();
-                    tweetIndex++) {
-                //                System.out.println(tweetsPrimarias.get(i).getText());
-                col[tweetIndex] = new Token(tweetsPrimarias.get(tweetIndex),
-                        new double[s.size()]);
-            }
-            for(int j = tweetIndex; j < tweetIndex + tweetsCELAC.size(); j++) {
-                col[j] = new Token(tweetsCELAC.get(j % tweetsCELAC.size()),
-                        new double[s.size()]);
-            }
+//            Token[] col = new Token[tweetsPrimarias.size()
+//                    + tweetsCELAC.size()];
+//            int tweetIndex;
+//            for(tweetIndex = 0; tweetIndex < tweetsPrimarias.size();
+//                    tweetIndex++) {
+//                //                System.out.println(tweetsPrimarias.get(i).getText());
+//                col[tweetIndex] = new Token(tweetsPrimarias.get(tweetIndex),
+//                        new double[s.size()]);
+//            }
+//            for(int j = tweetIndex; j < tweetIndex + tweetsCELAC.size(); j++) {
+//                col[j] = new Token(tweetsCELAC.get(j % tweetsCELAC.size()),
+//                        new double[s.size()]);
+//            }
             //            for(int j = i; j < i + tweetsCELAC.size(); i++) {
             ////                System.out.println(tweetsCELAC.get(i).getText());
             //                col[i] = new Token(tweetsCELAC.get(i),
             //                        new double[s.size()]);
             //            }
+
+            Token[] col = new Token[tweetsHDLP.size()];
+            int tweetIndex;
+            for(tweetIndex = 0; tweetIndex < tweetsHDLP.size();
+                    tweetIndex++) {
+                //                System.out.println(tweetsPrimarias.get(i).getText());
+                col[tweetIndex] = new Token(tweetsHDLP.get(tweetIndex),
+                        new double[s.size()]);
+            }
+
             // Term frequency (tf) y Document frequency term
             Iterator<String> it = s.iterator();
             int[] docFreq  = new int[s.size()];
@@ -156,24 +180,22 @@ public class Documentclustering {
 
             // Computar vector de pesos
             for(int i = 0; i < col.length; i++) {
-                col[i].computeTermWeight(docFreq,tweetsPrimarias.size()
-                        + tweetsCELAC.size());
+                col[i].computeTermWeight(docFreq,tweetsHDLP.size());
             }
             // Verificar un tweet en particular
-            for(int i = 0; i < col[6].vsm.length; i++) {
-                System.out.print(col[6].vsm[i]+" ");
-            }
-            System.out.println("");
+//            for(int i = 0; i < col[6].vsm.length; i++) {
+//                System.out.print(col[6].vsm[i]+" ");
+//            }
+//            System.out.println("");
             
             // Crear instancias
-            Instance[] instances = new Instance[tweetsCELAC.size() +
-                    tweetsPrimarias.size()];
+            Instance[] instances = new Instance[tweetsHDLP.size()];
             for(int i = 0; i < instances.length; i++) {
                 instances[i] = new DenseInstance(col[i].getVsm(),col[i].getTweet().getText());
             }
             Dataset data = new DefaultDataset();
             data.addAll(Arrays.asList(instances));
-            Clusterer km = new KMeans(2,100);
+            Clusterer km = new KMeans(2,10000);
             Dataset[] clusters = km.cluster(data);
             System.out.println("Cluster count: " + clusters.length);
             //TreeSet<java.lang.Object> p = (TreeSet<java.lang.Object>) clusters[0].classes();
