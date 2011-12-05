@@ -21,7 +21,6 @@ import twitter4j.Query;
 import twitter4j.QueryResult;
 import twitter4j.Tweet;
 import twitter4j.Twitter;
-import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
 
 /**
@@ -92,14 +91,45 @@ public class Documentclustering {
 
         Twitter twitter = new TwitterFactory().getInstance();
 
-        int number_of_clusters = 4;
-        int its = 1000;
-        int tweets_per_search = 100;
+        int number_of_clusters = 6;
+        int its = 10000;
+        int tweets_per_search = 60;
 
         try {
 
             String[] tokens;
             TreeSet<String> s = new TreeSet<String>();
+
+            /*
+            // Testing tweets
+
+            Vector<String> tweets = new Vector<String>();
+
+            try{
+                FileInputStream fstream = new FileInputStream("tweets.txt");
+                DataInputStream in = new DataInputStream(fstream);
+                BufferedReader br = new BufferedReader(new InputStreamReader(in));
+                String strLine;
+                while ((strLine = br.readLine()) != null)   {
+                    tweets.add(strLine);
+                }
+                in.close();
+            } catch (Exception e){
+                System.err.println("Error: " + e.getMessage());
+            }
+
+
+            for (int i=0; i<tweets.size(); i++){
+                tokens = tweets.get(i).toLowerCase().split("\\s");
+                // Cleaning the words and looking for stopwords
+                for (int j = 0; j<tokens.length; j++){
+                    String clean = clean(tokens[j]);
+                    if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
+                            clean.length()!=1 && !stillDirty(clean))
+                        s.add(clean);
+                }
+            }
+             */
 
             QueryResult resultVinotinto = twitter.search(new Query(args[0]).rpp(tweets_per_search));
             List<Tweet> tweetsVinotinto = resultVinotinto.getTweets();
@@ -109,12 +139,10 @@ public class Documentclustering {
                 // Cleaning the words and looking for stopwords
                 for (int i = 0; i<tokens.length; i++){
                     String clean = clean(tokens[i]);
-                    if ( !isStopword(clean,stopwords) && clean.length()!=0 && 
+                    if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
                             clean.length()!=1 && !stillDirty(clean))
                         s.add(clean);
                 }
-
-
             }
             //                System.out.println(tweet.getText());
 
@@ -130,7 +158,7 @@ public class Documentclustering {
                             clean.length()!=1 && !stillDirty(clean))
                         s.add(clean);
                 }
-                
+
             }
 
             // Removing the empty string from the set of words
@@ -181,7 +209,7 @@ public class Documentclustering {
                 col[i].computeTermWeight(docFreq,tweetsVinotinto.size()
                         + tweetsCELAC.size(),s);
             }
-            
+
             // Crear instancias
             Instance[] instances = new Instance[tweetsCELAC.size() +
                     tweetsVinotinto.size()];
@@ -203,19 +231,11 @@ public class Documentclustering {
 
             for (int i=0;i<number_of_clusters;i++){
 
-                int celac = 0;
-                int vinotinto = 0;
                 System.out.println(" ========== Cluster #"+i+" size: "+clusters[i].size());
                 for (int j=0;j<clusters[i].size();j++) {
                     String tweet = (String)clusters[i].get(j).classValue();
-                    if (tweet.matches("(?i).*#celac.*"))
-                      celac++;
-                    if (tweet.matches("(?i).*#vinotinto.*"))
-                      vinotinto++;
                     System.out.println(tweet);
                 }
-                System.out.println(celac + " tweets con #CELAC");
-                System.out.println(vinotinto + " tweets con #VINOTINTO");
 
             }
 
@@ -228,8 +248,8 @@ public class Documentclustering {
 
             System.out.println("Score: "+score);
             
-        } catch (TwitterException te) {
-            System.out.println("Failed to search tweets: " + te.getMessage());
+        } catch (Exception te) {
+            System.out.println("Error: " + te.getMessage());
             System.exit(-1);
         }
     }
