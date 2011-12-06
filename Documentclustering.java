@@ -60,7 +60,9 @@ public class Documentclustering {
                                             "q",
                                             "ni",
                                             "no",
-                                            "rt"
+                                            "rt",
+                                            "en",
+                                            "es"
                                             };
 
     public static boolean isStopword(String term, String[] stopwords){
@@ -73,15 +75,21 @@ public class Documentclustering {
     }
 
     public static boolean stillDirty(String term){
-        if (term.matches("[.,;:@\"!¿¡/()]"))
+        if (term.matches("[“”\'.,;:@\"!¿¡/?()]"))
             return true;
         return false;
     }
 
     public static String clean(String dirty){
 
-        dirty = dirty.replaceAll("^[.,;:\"!¿¡/()]+", "");
-        dirty = dirty.replaceAll("[.,;:\"!¿¡/()]+$", "");
+        dirty = dirty.replaceAll("^[“”.,;\':\"!¿¡?/()]+", "");
+        dirty = dirty.replaceAll("[“”.,;\':\"!¿¡?/()]+$", "");
+
+        dirty = dirty.replaceAll("á", "a");
+        dirty = dirty.replaceAll("é", "e");
+        dirty = dirty.replaceAll("í", "i");
+        dirty = dirty.replaceAll("ó", "o");
+        dirty = dirty.replaceAll("ú", "u");
 
         return dirty;
 
@@ -105,17 +113,33 @@ public class Documentclustering {
         return lemmatized.trim();
     }
 
-    public static String tags(Dataset ds){
+    public static boolean inArray(String a, String [] b){
+        for (int i=0; i<b.length; i++)
+            if (a.equals(b[i]))
+                return true;
+        return false;
+    }
 
+    public static String tags(Dataset ds, int nrank){
+
+        // Se unen todos los tweets del cluster en un solo string
         String alltweets = "";
         for (int j=0;j<ds.size();j++) {
                     String tweet = (String)ds.get(j).classValue();
                     alltweets = alltweets + tweet + " ";
         }
 
+        // Todas las palabras de todos los tweets
         String [] tws = alltweets.toLowerCase().split("\\s+");
+        // Map que relaciona cada string con su numero de ocurrencias
         Map<String, Integer> occurrences = new HashMap<String, Integer>();
+        // String de retorno final
+        String ret = "";
+        // Arreglo con las palabras ya seleccionadas
+        String [] selected = new String[nrank];
 
+        // Se crea el Map<String,int> que relaciona cada string con
+        // su respectivo numero de ocurrencias (queda desordenado)
         for ( String word : tws ) {
            Integer oldCount = occurrences.get(word);
            if ( oldCount == null ) {
@@ -124,20 +148,64 @@ public class Documentclustering {
            occurrences.put(word, oldCount + 1);
         }
 
+        // Se busca el String que tenga mas repeticiones
         String maxs = "";
         int max = 0;
         Iterator it = occurrences.entrySet().iterator();
         while (it.hasNext()) {
 
                 Entry term = (Entry)it.next();
-                int temp = (Integer)term.getValue();
-                if (temp>max) {
-                    max = temp;
-                    maxs = (String)term.getKey();
-                }
+                String word = (String)term.getKey();
+                String clean = clean(word.toLowerCase());
+
+                    if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
+                            clean.length()!=1 && !stillDirty(clean)) {
+
+                        int temp = (Integer)term.getValue();
+                        if (temp>max) {
+                            max = temp;
+                            maxs = clean;
+                        }
+
+                    }
         }
 
-        return maxs+"("+max+")";
+        selected[0] = maxs;
+        ret = ret + maxs + "("+max+")";
+
+        // Buscamos el resto de las palabras que nos hacen falta
+        for (int i=1; i<nrank; i++){
+
+            max = 0;
+
+            Iterator it2 = occurrences.entrySet().iterator();
+            while (it2.hasNext()) {
+
+                Entry term = (Entry)it2.next();
+                String word = (String)term.getKey();
+                String clean = clean(word.toLowerCase());
+
+                    if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
+                            clean.length()!=1 && !stillDirty(clean) &&
+                            !inArray(clean,selected)) {
+
+                        int temp = (Integer)term.getValue();
+                        if (temp>max) {
+                            max = temp;
+                            maxs = clean;
+                        }
+
+                    }
+            }
+
+            selected[i] = maxs;
+
+            ret = ret + ", " + maxs + "("+max+")";
+
+        }
+
+        // Returning the
+        return ret;
 
     }
 
@@ -293,8 +361,10 @@ public class Documentclustering {
             for (int i=0;i<number_of_clusters;i++){
 
                 System.out.println("");
-                System.out.println(" ========== Cluster #"+(i+1)+" size: "+best_clusters[i].size());
-                System.out.println(" ========== Tags del cluster: "+tags(best_clusters[i]));
+                System.out.println("");
+                System.out.println(" ========== Cluster #"+(i+1)+" size: "+best_clusters[i].size()+" ========== ");
+                System.out.println(" Tags del cluster: "+tags(best_clusters[i],5));
+                System.out.println("");
                 for (int j=0;j<best_clusters[i].size();j++) {
                     String tweet = (String)best_clusters[i].get(j).classValue();
                     System.out.println(tweet);
