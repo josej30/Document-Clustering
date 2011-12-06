@@ -5,35 +5,29 @@
 package documentclustering;
 
 import java.util.TreeSet;
-import twitter4j.Tweet;
+import twitter4j.Status;
 
 /**
  *
  * @author Lorenzo Fundaró <lorenzofundaro [at] yahoo.com>
  */
 public class Token {
-    Tweet tweet;
+    Status tweet;
     String tweetLematized;
     double[] vsm;
-    String fromUser;
     
-    public Token(Tweet t, double[] v) {
+    public Token(Status t, double[] v) {
         tweet = t;
         vsm = v;
-        fromUser = t.getFromUser();
         tweetLematized = "";
     }
     
-    public Tweet getTweet() {
+    public Status getTweet() {
         return tweet;
     }
     
     public double[] getVsm() {
         return vsm;
-    }
-
-    public String getFromUser() {
-        return fromUser;
     }
     
     public void computeTermWeight(int[] dfi, int nD, TreeSet<String> s) {
