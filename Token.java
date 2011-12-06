@@ -6,6 +6,7 @@ package documentclustering;
 
 import java.util.TreeSet;
 import twitter4j.Status;
+import twitter4j.Tweet;
 
 /**
  *
