@@ -5,8 +5,11 @@
 package documentclustering;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
 import net.sf.javaml.clustering.Clusterer;
 import net.sf.javaml.clustering.KMeans;
@@ -70,17 +73,71 @@ public class Documentclustering {
     }
 
     public static boolean stillDirty(String term){
-        if (term.matches("[.,;:@\"!/()]"))
+        if (term.matches("[.,;:@\"!¿¡/()]"))
             return true;
         return false;
     }
 
     public static String clean(String dirty){
 
-        dirty = dirty.replaceAll("^[.,;:\"!/()]+", "");
-        dirty = dirty.replaceAll("[.,;:\"!/()]+$", "");
+        dirty = dirty.replaceAll("^[.,;:\"!¿¡/()]+", "");
+        dirty = dirty.replaceAll("[.,;:\"!¿¡/()]+$", "");
 
         return dirty;
+
+    }
+
+    public static String lemmatize(String tweet, Lemmatizer lm){
+
+        String [] temp = tweet.toLowerCase().split("\\s");
+        String lemmatized = "";
+
+        for (int i = 0; i<temp.length; i++){
+            String clean = clean(temp[i]);
+            if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
+                    clean.length()!=1 && !stillDirty(clean)) {
+                String value = lm.get(clean);
+                if (value!=null) lemmatized += value+" ";
+                else lemmatized += clean+" ";
+            }
+        }
+
+        return lemmatized.trim();
+    }
+
+    public static String tags(Dataset ds){
+
+        String alltweets = "";
+        for (int j=0;j<ds.size();j++) {
+                    String tweet = (String)ds.get(j).classValue();
+                    alltweets = alltweets + tweet + " ";
+        }
+
+        String [] tws = alltweets.toLowerCase().split("\\s+");
+        Map<String, Integer> occurrences = new HashMap<String, Integer>();
+
+        for ( String word : tws ) {
+           Integer oldCount = occurrences.get(word);
+           if ( oldCount == null ) {
+              oldCount = 0;
+           }
+           occurrences.put(word, oldCount + 1);
+        }
+
+        String maxs = "";
+        int max = 0;
+        Iterator it = occurrences.entrySet().iterator();
+        while (it.hasNext()) {
+
+                Entry term = (Entry)it.next();
+                int temp = (Integer)term.getValue();
+                if (temp>max) {
+                    max = temp;
+                    maxs = (String)term.getKey();
+                }
+        }
+
+        return maxs+"("+max+")";
 
     }
 
@@ -90,46 +147,16 @@ public class Documentclustering {
     public static void main(String[] args) {
 
         Twitter twitter = new TwitterFactory().getInstance();
+        Lemmatizer lm = new Lemmatizer("lemas.txt");
 
-        int number_of_clusters = 6;
-        int its = 10000;
+        int number_of_clusters = 5;
+        int its = 10;
         int tweets_per_search = 60;
 
         try {
 
             String[] tokens;
             TreeSet<String> s = new TreeSet<String>();
-
-            /*
-            // Testing tweets
-
-            Vector<String> tweets = new Vector<String>();
-
-            try{
-                FileInputStream fstream = new FileInputStream("tweets.txt");
-                DataInputStream in = new DataInputStream(fstream);
-                BufferedReader br = new BufferedReader(new InputStreamReader(in));
-                String strLine;
-                while ((strLine = br.readLine()) != null)   {
-                    tweets.add(strLine);
-                }
-                in.close();
-            } catch (Exception e){
-                System.err.println("Error: " + e.getMessage());
-            }
-
-
-            for (int i=0; i<tweets.size(); i++){
-                tokens = tweets.get(i).toLowerCase().split("\\s");
-                // Cleaning the words and looking for stopwords
-                for (int j = 0; j<tokens.length; j++){
-                    String clean = clean(tokens[j]);
-                    if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
-                            clean.length()!=1 && !stillDirty(clean))
-                        s.add(clean);
-                }
-            }
-             */
 
             QueryResult resultVinotinto = twitter.search(new Query(args[0]).rpp(tweets_per_search));
             List<Tweet> tweetsVinotinto = resultVinotinto.getTweets();
@@ -140,11 +167,13 @@ public class Documentclustering {
                 for (int i = 0; i<tokens.length; i++){
                     String clean = clean(tokens[i]);
                     if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
-                            clean.length()!=1 && !stillDirty(clean))
-                        s.add(clean);
+                            clean.length()!=1 && !stillDirty(clean)) {
+                        String value = lm.get(clean);
+                        if (value!=null) s.add(value);
+                        else s.add(clean);
+                    }
                 }
             }
-            //                System.out.println(tweet.getText());
 
             QueryResult resultCelac = twitter.search(new Query(args[1]).rpp(tweets_per_search));
             List<Tweet>  tweetsCELAC = resultCelac.getTweets();
@@ -155,8 +184,11 @@ public class Documentclustering {
                 for (int i = 0; i<tokens.length; i++){
                     String clean = clean(tokens[i]);
                     if ( !isStopword(clean,stopwords) && clean.length()!=0 &&
-                            clean.length()!=1 && !stillDirty(clean))
-                        s.add(clean);
+                            clean.length()!=1 && !stillDirty(clean)){
+                        String value = lm.get(clean);
+                        if (value!=null) s.add(value);
+                        else s.add(clean);
+                    }
                 }
 
             }
@@ -165,7 +197,7 @@ public class Documentclustering {
             s.remove("");
 
             System.out.println(s.size());
-
+            //System.out.println(s.toString());
 
             // Preparar colección
             Token[] col = new Token[tweetsVinotinto.size()
@@ -181,6 +213,11 @@ public class Documentclustering {
                         new double[s.size()]);
             }
 
+            // Generando los tweets lematizados
+            for (int i = 0; i<col.length; i++){
+                col[i].tweetLematized = lemmatize(col[i].tweet.getText(),lm);
+            }
+
             // Term frequency (tf) y Document frequency term
             Iterator<String> it = s.iterator();
             int[] docFreq  = new int[s.size()];
@@ -188,10 +225,13 @@ public class Documentclustering {
             while (it.hasNext()) {
 
                 String term = it.next();
+                
+                String value = lm.get(term);
+                if (value!=null) term = value;
 
                 for(int i = 0; i < col.length; i++) {
                     boolean present = false;
-                    String tweetText = col[i].tweet.getText().toLowerCase();
+                    String tweetText = col[i].tweetLematized;
                     int k = 0;
                     while(k < tweetText.length() &&
                             (k = tweetText.indexOf(term, k)) != -1) {
@@ -216,37 +256,54 @@ public class Documentclustering {
             for(int i = 0; i < instances.length; i++) {
                 instances[i] = new DenseInstance(col[i].getVsm(),col[i].getTweet().getText());
             }
+
+            
             Dataset data = new DefaultDataset();
             data.addAll(Arrays.asList(instances));
-            Clusterer km = new KMeans(number_of_clusters, its, new CosineSimilarity());
-            Dataset[] clusters = km.cluster(data);
+            Dataset[] best_clusters = null;
+            double best_score = 999999999999.0;
+
+            for (int niter=0; niter<1; niter++) {
+
+                Clusterer km = new KMeans(number_of_clusters, its, new CosineSimilarity());
+                System.out.println("Clustering...");
+                Dataset[] clusters = km.cluster(data);
+                System.out.println("End Clustering");
+
+                ClusterEvaluation sse = new SumOfSquaredErrors();
+                double score = sse.score(clusters);
+                System.out.println(score);
+
+                if (score<best_score){
+                    best_score = score;
+                    best_clusters = clusters;
+                }
+
+            }
 
             System.out.println("Running Clustering with:");
             System.out.println("Number of clusters = "+number_of_clusters);
             System.out.println("Iterations = "+its);
             System.out.println("Distance Measure = Cosine Similarity");
+            System.out.println("Best Score = "+best_score);
             System.out.println("");
 
-            System.out.println("Clusters found: " + clusters.length);
+            System.out.println("Clusters found: " + best_clusters.length);
 
             for (int i=0;i<number_of_clusters;i++){
 
-                System.out.println(" ========== Cluster #"+i+" size: "+clusters[i].size());
-                for (int j=0;j<clusters[i].size();j++) {
-                    String tweet = (String)clusters[i].get(j).classValue();
+                System.out.println("");
+                System.out.println(" ========== Cluster #"+(i+1)+" size: "+best_clusters[i].size());
+                System.out.println(" ========== Tags del cluster: "+tags(best_clusters[i]));
+                for (int j=0;j<best_clusters[i].size();j++) {
+                    String tweet = (String)best_clusters[i].get(j).classValue();
                     System.out.println(tweet);
                 }
 
             }
 
+            System.out.println("");
             System.out.println(s.toString());
-
-            /* Create a measure for the cluster quality */
-            ClusterEvaluation sse= new SumOfSquaredErrors();
-            /* Measure the quality of the clustering */
-            double score=sse.score(clusters);
-
-            System.out.println("Score: "+score);
             
         } catch (Exception te) {
             System.out.println("Error: " + te.getMessage());
