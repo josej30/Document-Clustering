@@ -34,7 +34,7 @@ public class Token {
     public void computeTermWeight(int[] dfi, int nD, TreeSet<String> s) {
         for(int i = 0; i < vsm.length; i++) {
             if (dfi[i] > 0) {
-                vsm[i] = vsm[i]/(Math.sqrt((double)nD/(double)dfi[i]));
+                vsm[i] = vsm[i];///(Math.sqrt((double)nD/(double)dfi[i]));
             }
             else if (dfi[i] == 0){
                 System.out.println("Error: A document frequency was 0. Check this! This is absurd");

@@ -169,7 +169,7 @@ public class Documentclustering {
 
         int number_of_clusters = 8;
         int its = 150;
-        int tweetsPerAcc = 50;
+        int tweetsPerAcc = 20;
         String [] accounts = {"trafficaracas", "fmcenter", "trafico", "eutrafico"};
 
         try {
