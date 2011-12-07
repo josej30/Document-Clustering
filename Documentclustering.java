@@ -169,7 +169,7 @@ public class Documentclustering {
 
         int number_of_clusters = 8;
         int its = 150;
-        int tweetsPerAcc = 70;
+        int tweetsPerAcc = 50;
         String [] accounts = {"trafficaracas", "fmcenter", "trafico", "eutrafico"};
 
         try {
@@ -391,7 +391,7 @@ public class Documentclustering {
             Dataset[] best_clusters = null;
             double best_score = 999999999999.0;
 
-            for (int niter=0; niter<10; niter++) {
+            for (int niter=0; niter<1; niter++) {
 
                 Clusterer km = new KMeans(number_of_clusters, its, new CosineSimilarity());
                 System.out.println("Clustering...");
